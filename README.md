@@ -1,116 +1,60 @@
-# Content-Aware Video Cropping
+# AI Video Reframe
 
-An intelligent system that automatically converts landscape videos to portrait format (9:16) while keeping the most important subjects in frame.
+Batch convert landscape to portrait videos using AI.
 
-![Project Banner](video_cropped.png)
+---
 
-## Overview
+## Intro
 
-This project implements a content-aware video cropping system that uses computer vision and machine learning to:
-- Detect and track subjects of interest in videos
-- Prioritize subjects based on importance (people, faces, etc.)
-- Calculate optimal crop windows that follow the action
-- Generate smooth transitions between frames
-- Output portrait-oriented videos optimized for mobile viewing
+This software will detect motion in the video and crop the content dynamically keeping the main subject in the frame.
+There are many settings, but the main ones are:
+- Speed vs Quality : You can select how many frames to use AI on. The more you do, the better the tracking but the longer it takes.
+- Aspect Ratio : Specify the size of the reframe.
+- FFMPEG : Used to keep audio and do custom functions like trimming the footage.
 
-## Features
+---
 
-- **Intelligent Subject Detection**: Uses YOLOv8 to identify people, animals, vehicles, and other objects
-- **Face Prioritization**: Specifically detects and prioritizes human faces
-- **Saliency Detection**: Identifies visually interesting regions when subjects are few or missing
-- **Multi-Subject Handling**: Intelligently decides which subjects to focus on when multiple are present
-- **Smooth Tracking**: Maintains stable framing with temporal smoothing
-- **Parallel Processing**: Utilizes multi-threading for faster keyframe analysis
-- **Configurable Parameters**: Adjust model size, processing speed, and smoothing for different needs
-- **Progress Reporting**: Provides detailed progress updates during processing
+## Requirements
+1. Python 3
+2. [FFMPEG](https://github.com/FFmpeg/FFmpeg)
+
+> This runs linux/macos shell scripts - but it easily can be run in windows if needed. Just read the `run.sh` file and run commands by hand.
+
+---
 
 ## Installation
 
-### Requirements
-
-- Python 3.8+
-- CUDA-compatible GPU recommended for faster processing
-
-### Setup
-
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/content-aware-video-cropping.git
+git clone https://github.com/IORoot/AI_Video_Reframe
 ```
 
-2. Install dependencies:
+2. Setup virtual environment
+```bash
+cd AI_Video_Reframe
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirement.txt
+#or individually:
+pip install ultralytics opencv-python numpy tqdm
 ```
 
-## Project Evolution
+## Run a single file
 
-### Initial Approach
-We started with a basic implementation using YOLOv3 for object detection and a simple tracking mechanism. This approach had limitations:
-- Slower detection speed
-- Less accurate object identification
-- Basic tracking that struggled with multiple subjects
-- Simple crop window calculation without sophisticated prioritization
-
-### Improvements and Iterations
-1. **Upgraded to YOLOv8**: 
-   - Significantly improved detection accuracy
-   - Better performance, especially for small objects
-   - More robust in challenging lighting conditions
-
-2. **Enhanced Subject Prioritization**:
-   - Added dedicated face detection using Haar Cascades
-   - Implemented weighted importance calculation based on class, size, and position
-   - Added historical weighting for stability
-
-3. **Improved Tracking**:
-   - Implemented IoU-based tracking with Hungarian algorithm
-   - Added handling for subjects that temporarily disappear
-
-4. **Optimized Processing Pipeline**:
-   - Added keyframe processing with interpolation
-   - Implemented phased processing with progress updates
-   - Added robust error handling
-
-5. **Enhanced Smoothing**:
-   - Implemented multi-factor temporal smoothing
-   - Added inertia to resist sudden changes
-   - Balanced responsiveness with stability
-
-6. **Latest Improvements**:
-   - Added saliency detection to identify visually interesting regions
-   - Implemented parallel processing with ThreadPoolExecutor
-   - Enhanced importance calculation with higher weights for class and size
-   - Optimized interpolation using numpy for faster processing
-
-
-## Project Structure
-
-```
-content-aware-video-cropping/
-│
-├── main.py                  # Entry point for the application
-├── video_processor.py       # Video input/output operations
-├── object_detector.py       # Object detection using YOLOv8
-├── object_tracker.py        # Tracking objects across frames
-├── crop_calculator.py       # Calculate optimal crop window
-├── smoothing.py             # Temporal smoothing for crop windows
-├── utils.py                 # Utility functions
-└── requirements.txt         # Dependencies
-```
-
-## Usage
-
-### Basic Usage
-
+To accept the defaults and convert landscape 16:9 videos to 3:4 videos, do this:
 ```bash
-python main.py --input "path/to/input/video.mp4" --output "path/to/output/video.mp4"
+./run.sh /Location/of/MP4/file.mp4
 ```
 
-### Advanced Options
+## Changing the settings
 
+The main line to run the code is:
 ```bash
-python main.py --input "path/to/input/video.mp4" --output "path/to/output/video.mp4" --model_size m --skip_frames 10 --smoothing_window 30 --conf_threshold 0.5 --use_saliency --max_workers 4
+python main.py --input "${FILENAME}" --output "${PROCESSED_FILENAME}" --model_size m --skip_frames 3 --smoothing_window 30 --conf_threshold 0.5 --use_saliency --max_workers 6 --target_ratio 0.75
 ```
 
 ### Parameters
@@ -137,211 +81,62 @@ python main.py --input "path/to/input/video.mp4" --output "path/to/output/video.
 | Large (l) | `--model_size l` | Higher accuracy, slower speed | When accuracy is more important |
 | XLarge (x) | `--model_size x` | Highest accuracy, slowest speed | When maximum accuracy is required |
 
-### Processing Multiple Videos
 
-To process multiple videos in a directory, you can use a simple shell script:
+---
+
+### Scenarios:
+
+I've found that if you want highly accurate (but very slow processing) video reframing, you need to do the following flags:
+```bash
+--skip_frames 0   # Use AI to detect movement on EVERY Frame
+--model_size x    # Use biggest AI Model
+--max_workers 8   # Or the number of CPU cores you have
+```
+
+Do a good job of tracking, but fast movements might not be caught:
+```bash
+--skip_frames 3   # Skip 3 frames, and then use AI on 1. Repeat.
+--model_size m    # use the medium AI model
+--max_workers 6   # 75% of All cores
+```
+
+Fast, but inaccurate tracking - good for low movement or interview videos:
+```bash
+--skip_frames 30  # on a 30fps video, use 1 frame per second.
+--model_size s    # use a small AI Model
+--max_workers 6   # 75% of cores
+```
+
+There are a lot more settings and the python code can be changed to make even more alterations too.
+
+---
+
+## Batch Runs
+
+Use like so:
 
 ```bash
-#!/bin/bash
-INPUT_DIR="/path/to/videos"
-OUTPUT_DIR="/path/to/outputs"
-
-# Create output directory if it doesn't exist
-mkdir -p "$OUTPUT_DIR"
-
-# Process each MP4 file in the input directory
-for video in "$INPUT_DIR"/*.mp4; do
-    # Get just the filename without path
-    filename=$(basename "$video")
-    # Run the processing script
-    python main.py --input "$video" --output "$OUTPUT_DIR/${filename%.mp4}_cropped.mp4" --model_size m --use_saliency --max_workers 4
-    echo "Processed $filename"
-done
+./run_batch.sh /folder/with/videos/in/ 
 ```
 
-## Architecture
+This will find all `mp4` files in any subdirectory within that folder. It will then create a new file
+called `run_all_found_files.sh` which lists every file and the run command against each one. 
 
-The system follows a modular pipeline architecture:
+The reason that I prefer using this method rather than just a loop over each file and running it is
+because you can open up the `run_all_found_files.sh` file and check how far the batch has got through.
+It also allow you to cancel the process at any time and then start again (it will skip any already done)
+without a problem.
 
-1. **Video Processing**: Handles video I/O operations
-2. **Object Detection**: Identifies subjects using YOLOv8
-3. **Saliency Detection**: Identifies visually interesting regions
-4. **Object Tracking**: Maintains subject identity across frames
-5. **Crop Window Calculation**: Determines optimal crop position
-6. **Temporal Smoothing**: Ensures smooth transitions
-7. **Video Generation**: Creates the final portrait video
+Once all videos are converted, the `run_all_found_files.sh` file is removed.
 
-## Algorithm Flow
 
-1. **Keyframe Analysis**:
-   - Process every Nth frame to reduce computation
-   - Detect objects using YOLOv8
-   - Track objects across consecutive keyframes
+## Output
 
-2. **Subject Prioritization**:
-   - Assign importance scores based on class, size, position, and confidence
-   - Prioritize human faces and people
-   - Use saliency detection when objects are few or missing
+The reframed videos will be in a subfolder within the directory of the found video file.
 
-3. **Crop Window Calculation**:
-   - Calculate weighted center point based on subject importance
-   - Blend object-based and saliency-based interest points
-   - Apply historical weighting for stability
-   - Ensure crop window maintains target aspect ratio
 
-4. **Interpolation and Smoothing**:
-   - Interpolate crop windows for non-keyframes
-   - Apply temporal smoothing to avoid jerky movements
 
-5. **Video Generation**:
-   - Apply calculated crop windows to original frames
-   - Generate output video in portrait format
 
-## Technical Implementation Details
+## Credit
 
-### Object Detection
-We use YOLOv8 from the Ultralytics package for object detection:
-```python
-from ultralytics import YOLO
-
-# Initialize model
-model = YOLO('yolov8n.pt')  # or 's', 'm', 'l', 'x' for different sizes
-
-# Run detection
-results = model(frame)
-
-# Process results
-for det in results.boxes.data.cpu().numpy():
-    x1, y1, x2, y2, conf, cls = det
-    # Process detection...
-```
-
-### Saliency Detection
-We use OpenCV's saliency detection to find visually interesting regions:
-```python
-# Initialize saliency detector
-saliency_detector = cv2.saliency.StaticSaliencySpectralResidual_create()
-
-# Calculate saliency map
-success, saliency_map = saliency_detector.computeSaliency(frame)
-
-# Find most salient region
-_, thresh = cv2.threshold(saliency_map, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-largest_contour = max(contours, key=cv2.contourArea)
-```
-
-We use OpenCV's saliency detection with fallback options:
-```python
-# Initialize saliency detector with fallback
-try:
-    saliency_detector = cv2.saliency.StaticSaliencySpectralResidual_create()
-except:
-    try:
-        saliency_detector = cv2.saliency.StaticSaliencyFineGrained_create()
-    except:
-        print("Warning: Saliency detection not available. Continuing without saliency...")
-        saliency_detector = None
-```
-
-### Model Loading
-YOLOv8 models are loaded with local file priority:
-```python
-model_path = f'models/yolov8{model_size}.pt'
-if not os.path.exists(model_path):
-    print(f"Model {model_path} not found, using default model from Ultralytics")
-    model_path = f'yolov8{model_size}.pt'
-```
-
-### Parallel Processing
-We use ThreadPoolExecutor for parallel keyframe processing:
-```python
-with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
-    futures = []
-    for frame_idx in keyframes:
-        future = executor.submit(
-            process_keyframe, 
-            frame_idx, 
-            frame, 
-            detector, 
-            tracker, 
-            tracked_objects_by_frame
-        )
-        futures.append(future)
-```
-
-### Enhanced Importance Calculation
-We calculate subject importance with higher weights for class and size:
-```python
-importance = (
-    class_weight * 1.5 *  # Increased class weight influence
-    confidence * 
-    (size_weight * size_factor * 1.2 + center_weight * center_factor)
-)
-```
-
-## Performance Considerations
-
-- Processing time depends on video length, resolution, and chosen model size
-- Using larger model sizes (l, x) significantly increases processing time but improves detection accuracy
-- Increasing `skip_frames` speeds up processing but may reduce tracking accuracy
-- Parallel processing with `max_workers` can significantly improve speed on multi-core systems
-- GPU acceleration significantly improves performance
-
-## Troubleshooting
-
-### Common Issues and Solutions
-
-1. **Video Writer Error**:
-   - Try using a different codec with `cv2.VideoWriter_fourcc(*'XVID')`
-   - Ensure the output directory exists
-   - Check that the crop dimensions are valid
-
-2. **Slow Processing**:
-   - Increase `skip_frames` parameter
-   - Use a smaller model size
-   - Increase `max_workers` if you have more CPU cores
-   - Ensure GPU acceleration is working if available
-
-3. **Poor Tracking Quality**:
-   - Use a larger model size for better detection
-   - Decrease `skip_frames` for more frequent detection
-   - Enable saliency detection with `--use_saliency`
-   - Increase `conf_threshold` to filter out low-confidence detections
-
-4. **Memory Issues**:
-   - Process shorter video segments
-   - Use a smaller model size
-   - Reduce video resolution before processing
-   - Decrease `max_workers` to reduce memory usage
-
-5. **Saliency Detection Issues**:
-   - The system will continue working even if saliency detection is unavailable
-   - Different OpenCV versions may support different saliency detection methods
-   - Use `--use_saliency` only if your OpenCV installation supports it
-
-## Future Improvements
-
-1. **GPU Acceleration**: Optimize for GPU processing to improve speed
-2. **Advanced Tracking**: Implement more sophisticated tracking algorithms (DeepSORT)
-3. **Scene Understanding**: Add scene context awareness for better cropping decisions
-4. **Subject Re-identification**: Improve handling of subjects that leave and re-enter the frame
-5. **Adaptive Processing**: Dynamically adjust processing parameters based on video content
-
-## Demo
-
-![Demo GIF](https://via.placeholder.com/640x360)
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) for object detection
-- [OpenCV](https://opencv.org/) for video processing capabilities
-- [Hungarian Algorithm](https://en.wikipedia.org/wiki/Hungarian_algorithm) for optimal assignment in tracking
+This code was originally from [https://github.com/Sagar-lab03/AI-Content-Aware-Video-Cropping](https://github.com/Sagar-lab03/AI-Content-Aware-Video-Cropping)
