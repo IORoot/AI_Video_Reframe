@@ -134,9 +134,11 @@ Once all videos are converted, the `run_all_found_files.sh` file is removed.
 
 The reframed videos will be in a subfolder within the directory of the found video file.
 
-
+FFMPEG is used to copy the audio from the original to the reframed version since the main
+python code does not do that.
 
 
 ## Credit
 
-This code was originally from [https://github.com/Sagar-lab03/AI-Content-Aware-Video-Cropping](https://github.com/Sagar-lab03/AI-Content-Aware-Video-Cropping)
+This code was originally from [https://github.com/Sagar-lab03/AI-Content-Aware-Video-Cropping](https://github.com/Sagar-lab03/AI-Content-Aware-Video-Cropping) and all the AI work is theirs.
+I've slightly adapted it to include the `bash` scripts and FFMPEG bits for my own usage.
