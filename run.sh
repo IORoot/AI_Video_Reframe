@@ -27,13 +27,13 @@ mkdir -p ${OUTPUT_FOLDER}
 echo "Processing ${FILENAME}"
 python main.py --input "${FILENAME}" --output "${PROCESSED_FILENAME}" --model_size m --skip_frames 3 --smoothing_window 30 --conf_threshold 0.5 --use_saliency --max_workers 6 --target_ratio 0.75
 
-# echo "Trimming ${PROCESSED_FILENAME}"
-# ffmpeg -i ${PROCESSED_FILENAME} -ss 5 -to $(ffmpeg -i ${PROCESSED_FILENAME} 2>&1 | awk -F: '/Duration/ {print $2*3600 + $3*60 + $4 - 5.5}') -c copy ${TRIMMED_FILENAME}
+echo "Trimming ${PROCESSED_FILENAME}"
+ffmpeg -i ${PROCESSED_FILENAME} -ss 5 -to $(ffmpeg -i ${PROCESSED_FILENAME} 2>&1 | awk -F: '/Duration/ {print $2*3600 + $3*60 + $4 - 5.5}') -c copy ${TRIMMED_FILENAME}
 
-echo "Moving ${PROCESSED_FILENAME} to ${OUTPUT_FOLDER}"
-mv ${PROCESSED_FILENAME} ${OUTPUT_FOLDER}
+echo "Moving ${TRIMMED_FILENAME} to ${OUTPUT_FOLDER}"
+mv ${TRIMMED_FILENAME} ${OUTPUT_FOLDER}
 
-# echo "Removing ${PROCESSED_FILENAME}"
-# rm ${PROCESSED_FILENAME}
+echo "Removing ${PROCESSED_FILENAME}"
+rm ${PROCESSED_FILENAME}
 
 echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
