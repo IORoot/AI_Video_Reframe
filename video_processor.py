@@ -58,6 +58,24 @@ class VideoProcessor:
         # Apply crop
         return frame[y:y+h, x:x+w]
     
+    def convert_to_h264(self, input_path):
+        """Convert the given video to H.264 format using FFmpeg."""
+
+        temp_h264_output = "temp_h264_output.mp4"
+
+        ffmpeg_command = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28",
+            "-c:a", "aac", "-b:a", "128k",
+            temp_h264_output
+        ]
+        
+        print(f"Encoding video to H.264: {temp_h264_output}")
+        subprocess.run(ffmpeg_command, check=True)
+
+        # Overwrite original video with the new one
+        os.replace(temp_h264_output, input_path)
+
 
     def merge_audio(self, video_path, original_video):
         """Merge original audio into the processed video using FFmpeg."""
@@ -165,6 +183,8 @@ class VideoProcessor:
 
         # Merge audio
         self.merge_audio(output_path, self.video_info['path'])
+
+        self.convert_to_h264(output_path)
 
     
     def __del__(self):
