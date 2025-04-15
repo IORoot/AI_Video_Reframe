@@ -27,8 +27,6 @@ MAX_WORKERS=6
 TARGET_RATIO=0.75
 
 
-
-
 # Check if the input file is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <filename>"
