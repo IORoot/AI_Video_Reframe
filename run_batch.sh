@@ -19,4 +19,4 @@ chmod +x $RUNFILE
 # Run the file
 ./$RUNFILE
 
-rm $RUNFILE
+# rm $RUNFILE

@@ -1,5 +1,33 @@
 #!/bin/bash
 
+# Size of the model to use. Options: "s", "m", "l", "x"
+MODEL_SIZE="x"
+
+# Number of frames to skip for saliency detection
+SKIP_FRAMES=30
+
+# Number of frames for temporal video smoothing
+SMOOTHING_WINDOW=30
+
+# Confidence threshold for saliency detection
+# 0.0 to 1.0
+CONF_THRESHOLD=0.7
+
+# Use saliency detection
+USE_SALIENCY="--use_saliency"
+
+# Number of workers for processing
+# This should be set to the number of CPU cores available
+MAX_WORKERS=6
+
+# Ratio of the target size to the original size
+# 4:3 aspect ratio is 0.75
+# 16:9 aspect ratio is 0.5625
+# 1:1 aspect ratio is 1.0
+TARGET_RATIO=0.75
+
+
+# Check if the input file is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <filename>"
     exit 1
@@ -25,15 +53,15 @@ echo "Making ${OUTPUT_FOLDER}"
 mkdir -p ${OUTPUT_FOLDER}
 
 echo "Processing ${FILENAME}"
-python main.py --input "${FILENAME}" --output "${PROCESSED_FILENAME}" --model_size m --skip_frames 3 --smoothing_window 30 --conf_threshold 0.5 --use_saliency --max_workers 6 --target_ratio 0.75
+python main.py --input "${FILENAME}" --output "${PROCESSED_FILENAME}" --model_size ${MODEL_SIZE} --skip_frames ${SKIP_FRAMES} --smoothing_window ${SMOOTHING_WINDOW} --conf_threshold ${CONF_THRESHOLD} ${USE_SALIENCY} --max_workers ${MAX_WORKERS} --target_ratio ${TARGET_RATIO}
 
-# echo "Trimming ${PROCESSED_FILENAME}"
-# ffmpeg -i ${PROCESSED_FILENAME} -ss 5 -to $(ffmpeg -i ${PROCESSED_FILENAME} 2>&1 | awk -F: '/Duration/ {print $2*3600 + $3*60 + $4 - 5.5}') -c copy ${TRIMMED_FILENAME}
+echo "Trimming ${PROCESSED_FILENAME}"
+ffmpeg -i ${PROCESSED_FILENAME} -ss 5 -to $(ffmpeg -i ${PROCESSED_FILENAME} 2>&1 | awk -F: '/Duration/ {print $2*3600 + $3*60 + $4 - 5.5}') -c copy ${TRIMMED_FILENAME}
 
-echo "Moving ${PROCESSED_FILENAME} to ${OUTPUT_FOLDER}"
-mv ${PROCESSED_FILENAME} ${OUTPUT_FOLDER}
+echo "Moving ${TRIMMED_FILENAME} to ${OUTPUT_FOLDER}"
+mv ${TRIMMED_FILENAME} ${OUTPUT_FOLDER}
 
-# echo "Removing ${PROCESSED_FILENAME}"
-# rm ${PROCESSED_FILENAME}
+echo "Removing ${PROCESSED_FILENAME}"
+rm ${PROCESSED_FILENAME}
 
 echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
