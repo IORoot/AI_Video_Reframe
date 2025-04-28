@@ -12,7 +12,11 @@ class CropCalculator:
                  center_weight=0.3, 
                  motion_weight=0.3, 
                  history_weight=0.7, 
-                 saliency_weight=0.4
+                 saliency_weight=0.4,
+                 debug=False,
+                 face_detection=False,
+                 weighted_center=False,
+                 blend_saliency=False,
                 ):
         """
         Initialize the crop calculator with enhanced parameters.
@@ -34,6 +38,10 @@ class CropCalculator:
         self.motion_weight = motion_weight
         self.history_weight = history_weight
         self.saliency_weight = saliency_weight
+        self.debug = debug
+        self.face_detection = face_detection
+        self.weighted_center = weighted_center
+        self.blend_saliency = blend_saliency
         
         # Enhanced class weights with more categories and higher contrast
         self.class_weights = class_weights or {
@@ -82,21 +90,29 @@ class CropCalculator:
         # If frame is provided, enhance detection
         saliency_center = None
         if frame is not None:
-            # Detect faces to add to objects
-            faces = self._detect_faces(frame)
-            for face in faces:
-                face_obj = {
-                    'box': face,
-                    'class_name': 'face',
-                    'confidence': 0.9,
-                    'class_id': -1  # Special ID for faces
-                }
-                objects.append(face_obj)
+            if self.face_detection:
+                # Detect faces to add to objects
+                faces = self._detect_faces(frame)
+                for face in faces:
+                    face_obj = {
+                        'box': face,
+                        'class_name': 'face',
+                        'confidence': 0.9,
+                        'class_id': -1  # Special ID for faces
+                    }
+                    objects.append(face_obj)
             
             # Calculate saliency map (only if we have few or no objects)
             if len(objects) < 3:
                 saliency_center = self._calculate_saliency(frame, frame_width, frame_height)
-        
+            
+            if objects and objects[0]['box'] is not None:
+                if self.debug:
+                    print(f"✂️ Inputs Box: [x={objects[0]['box'][0]}, y={objects[0]['box'][1]}, w={objects[0]['box'][2]}, h={objects[0]['box'][3]}], confidence: {objects[0]['confidence']:.2f}")
+                    with open("debug_logs/log2a_cropinputs.txt", "a") as f:
+                        f.write(f"Crop Inputs Box: [x={objects[0]['box'][0]}, y={objects[0]['box'][1]}, w={objects[0]['box'][2]}, h={objects[0]['box'][3]}], confidence: {objects[0]['confidence']:.2f}\n")
+
+
         # If no objects detected and no saliency, use previous crop window or center of frame
         if not objects and saliency_center is None:
             if self.prev_crop_window is not None:
@@ -112,15 +128,19 @@ class CropCalculator:
         
         # Calculate weighted center of attention from objects
         if sorted_objects:
-            total_weight = sum(obj['importance'] for obj in sorted_objects)
-            weighted_x = sum(self._get_center_x(obj['box']) * obj['importance'] for obj in sorted_objects) / total_weight
-            weighted_y = sum(self._get_center_y(obj['box']) * obj['importance'] for obj in sorted_objects) / total_weight
+            if self.weighted_center:
+                total_weight = sum(obj['importance'] for obj in sorted_objects)
+                weighted_x = sum(self._get_center_x(obj['box']) * obj['importance'] for obj in sorted_objects) / total_weight
+                weighted_y = sum(self._get_center_y(obj['box']) * obj['importance'] for obj in sorted_objects) / total_weight
+            else:
+                weighted_x = self._get_center_x(obj['box'])
+                weighted_y = self._get_center_y(obj['box'])
         else:
             # If no objects but we have saliency
             weighted_x, weighted_y = saliency_center or (frame_width / 2, frame_height / 2)
         
         # If we have both objects and saliency, blend them
-        if sorted_objects and saliency_center:
+        if sorted_objects and saliency_center and self.blend_saliency:
             saliency_x, saliency_y = saliency_center
             # Blend based on number and importance of objects
             if len(sorted_objects) <= 2:
@@ -164,6 +184,11 @@ class CropCalculator:
         
         # Store current crop window for next frame
         self.prev_crop_window = current_crop
+
+        if self.debug:
+            print(f"✂️ CropCalc Box: [x={x}, y={y}, w={crop_width}, h={crop_height}]")
+            with open("debug_logs/log2b_cropcalc.txt", "a") as f:
+                f.write(f"CropCalc Box: [x={x}, y={y}, w={crop_width}, h={crop_height}]\n")
         
         return current_crop
     

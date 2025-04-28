@@ -5,3 +5,4 @@ matplotlib
 ultralytics
 torch
 opencv-contrib-python
+nicegui

@@ -9,6 +9,63 @@ from object_detector import ObjectDetector
 from object_tracker import ObjectTracker
 from crop_calculator import CropCalculator
 from smoothing import CropWindowSmoother
+from nicegui import ui
+
+
+
+
+
+def start_gui():
+    """Start the NiceGUI interface."""
+
+    """Override default styles for NiceGUI."""
+    ui.query('.nicegui-content').classes('items-stretch')
+    # ui.query('.q-field__label').classes('l-auto w-full text-right')
+    # ui.query('.q-field--float .q-field__label').style('transform:none')
+
+    ui.label('Content-Aware Video Cropping')
+
+    input_path = ui.input('Input Video Path')
+    output_path = ui.input('Output Video Path')
+    target_ratio = ui.number('Target Aspect Ratio (width/height)', value=9/16)
+    detector = ui.select(['yolo'], label='Object Detection Model', value='yolo')
+    smoothing_window = ui.number('Smoothing Window (frames)', value=30)
+    skip_frames = ui.number('Skip Frames', value=10)
+    model_size = ui.select(['n', 's', 'm', 'l', 'x'], label='YOLOv8 Model Size', value='n')
+    conf_threshold = ui.number('Confidence Threshold', value=0.5)
+    use_saliency = ui.checkbox('Use Saliency Detection')
+    max_workers = ui.number('Max Worker Threads', value=4)
+
+    def run_script():
+        ui.notify('Processing started...')
+        try:
+            args = argparse.Namespace(
+                input=input_path.value,
+                output=output_path.value,
+                target_ratio=target_ratio.value,
+                detector=detector.value,
+                smoothing_window=int(smoothing_window.value),
+                skip_frames=int(skip_frames.value),
+                model_size=model_size.value,
+                conf_threshold=float(conf_threshold.value),
+                use_saliency=use_saliency.value,
+                max_workers=int(max_workers.value),
+            )
+            main(args)
+            ui.notify('Processing complete!')
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            ui.notify(f"Error: {str(e)}")
+
+    ui.button('Run', on_click=run_script)
+
+    ui.run()
+
+
+
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Content-aware video cropping')
@@ -32,10 +89,19 @@ def parse_args():
                         help='Maximum number of worker threads for parallel processing')
     return parser.parse_args()
 
+
+
+
+
 def process_keyframe(frame_idx, frame, detector, tracker, tracked_objects_by_frame):
     """Process a keyframe with detection and tracking."""
+    print(f"🐤 main : process_keyframe: {frame_idx}")
+
     # Detect objects in frame
-    detected_objects = detector.detect(frame)
+    detected_objects = detector.detect(
+        frame,      # 🕵️‍♂️ Detect objects in the frame
+        top_n=1,    # 🏷️ Get the top N detection (highest confidence) 
+    )
     
     # Update tracker with new detections
     tracked_objects = tracker.update(frame, detected_objects)
@@ -43,18 +109,53 @@ def process_keyframe(frame_idx, frame, detector, tracker, tracked_objects_by_fra
     
     return frame_idx
 
-def main():
-    args = parse_args()
+
+
+
+
+def main(args=None):
+
+    if args is None:
+        args = parse_args()
     
     # Initialize components with YOLOv8
     video_processor = VideoProcessor()
+
+
     detector = ObjectDetector(
-        confidence_threshold=args.conf_threshold,
-        model_size=args.model_size  # Pass the model size argument here
+        confidence_threshold=args.conf_threshold,   # 🕵️‍♂️ Confidence threshold for object detection (0-1).
+        model_size=args.model_size,                # 📏 Size of the YOLOv8 model (n=small, s=medium, m=large, l=xlarge).
+        classes=[0],                               # 🏷️ Classes to detect (0=person, 1=bicycle, 4=car, 7=truck, etc...).
+        debug=False,                                # 🐛 If True, saves debug images and logs to help you visualize decisions.
     )
-    tracker = ObjectTracker()
-    crop_calculator = CropCalculator(target_ratio=args.target_ratio)
-    smoother = CropWindowSmoother(window_size=args.smoothing_window)
+
+    tracker = ObjectTracker(
+        max_disappeared=30,     # 🕵️‍♂️ Number of frames an object can be missing before being considered lost.
+        max_distance=50         # 🔍 Maximum distance for re-identifying lost objects (in pixels).
+    )
+
+
+    crop_calculator = CropCalculator(
+        target_ratio=args.target_ratio,  # 📐 Desired aspect ratio of the crop (e.g., 16/9 for widescreen). Example: 1.77
+        padding_ratio=0.1,               # ➡️ Add 10% padding around the detected area to avoid tight crops.
+        class_weights=None,              # 🏷️ Optional: prioritize certain object classes (e.g., faces over background). Example: {0: 1.0, 1: 0.5}
+        size_weight=0.4,                 # 📏 How much object size matters (larger objects are more important).
+        center_weight=0.3,               # 🎯 How much being close to the frame center matters (centered objects preferred).
+        motion_weight=0.3,               # 🎥 How much moving objects are prioritized (good for tracking action).
+        history_weight=0.1,              # 🕰️ How much previous frames affect the crop (smoothness over time). Set 0 to ignore history.
+        saliency_weight=0.4,             # 👀 How much visual "importance" (saliency maps) matters (e.g., bright or attention-grabbing regions).
+        debug=False,                     # 🐛 If True, saves debug images and logs to help you visualize decisions.
+        face_detection=False,            # 👤 If True, uses face to enhance detection in the crop. Uses weighted averages.
+        weighted_center=False,           # ⚖️ If True, uses weighted average of detected objects' centers for crop center.
+        blend_saliency=False,            # 🌈 If True, blends saliency map with detected objects to enhance crop.
+    )
+
+
+    smoother = CropWindowSmoother(
+        window_size=args.smoothing_window,  # 📅 Number of frames for smoothing (e.g., 30 for 1 second at 30 FPS).
+        position_inertia=0.8,               # 🔄 How much the position of the crop should "stick" to the previous frame (0-1).
+        size_inertia=0.9                    # 📏 How much the size of the crop should "stick" to the previous frame (0-1).
+    )
     
     # Load video and get properties
     video_info = video_processor.load_video(args.input)
@@ -71,6 +172,12 @@ def main():
     
     start_time = time.time()
     
+
+
+
+
+
+
     # First pass: detect and track objects on keyframes only
     print("Phase 1: Detecting and tracking objects...")
     
@@ -112,6 +219,15 @@ def main():
             if (i + 1) % 10 == 0:
                 print(f"Processed {i + 1}/{len(keyframes)} keyframes")
     
+
+
+
+
+
+
+
+
+
     # Second pass: calculate crop windows for keyframes
     print("Phase 2: Calculating crop windows for keyframes...")
     
@@ -139,6 +255,16 @@ def main():
         if frame_idx % 100 == 0:
             print(f"Calculated crop window for keyframe {frame_idx}/{total_frames}")
     
+
+
+
+
+
+
+
+
+
+
     # Phase 3: Interpolate crop windows for non-keyframes
     print("Phase 3: Interpolating crop windows for non-keyframes...")
     
@@ -190,10 +316,31 @@ def main():
             y = int((height - crop_height) / 2)
             crop_windows[i] = [x, y, crop_width, crop_height]
     
+
+
+
+
+
+
+
+
+
+
     # Apply temporal smoothing to crop windows
     print("Phase 4: Applying temporal smoothing...")
-    smoothed_windows = smoother.smooth(crop_windows)
+    #smoothed_windows = smoother.smooth(crop_windows)
+    smoothed_windows = crop_windows
     
+
+
+
+
+
+
+
+
+
+
     # Generate output video with cropped frames
     print("Phase 5: Generating output video...")
     video_processor.generate_output_video(
@@ -206,5 +353,13 @@ def main():
     print(f"Video processing completed in {elapsed_time:.2f} seconds")
     print(f"Output saved to: {args.output}")
 
-if __name__ == "__main__":
-    main() 
+
+
+
+
+if __name__ in {"__main__", "__mp_main__"}:
+    import sys
+    if len(sys.argv) > 1:
+        main()
+    else:
+        start_gui()
