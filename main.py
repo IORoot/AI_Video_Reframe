@@ -88,13 +88,13 @@ def parse_args():
     parser.add_argument('--track_count', type=int, default=1, help='Number of objects to track in frame (Default 1)')
 
     # Crop calculator args
-    parser.add_argument('--padding_ratio', type=float, default=None, help='Padding ratio for crop window (Default 0.1)')
+    parser.add_argument('--padding_ratio', type=float, default=0.1, help='Padding ratio for crop window (Default 0.1)')
     parser.add_argument('--class_weights', type=float, nargs='+', default=None, help='Class weights for object importance (Default None)')
-    parser.add_argument('--size_weight', type=float, default=None, help='Weight for object size in crop calculation (Default 0.4)')
-    parser.add_argument('--center_weight', type=float, default=None, help='Weight for object center in crop calculation (Default 0.3)')
-    parser.add_argument('--motion_weight', type=float, default=None, help='Weight for object motion in crop calculation (Default 0.3)')
-    parser.add_argument('--history_weight', type=float, default=None, help='Weight for object history in crop calculation (Default 0.1)')
-    parser.add_argument('--saliency_weight', type=float, default=None, help='Weight for saliency in crop calculation (Default 0.4)')
+    parser.add_argument('--size_weight', type=float, default=0.4, help='Weight for object size in crop calculation (Default 0.4)')
+    parser.add_argument('--center_weight', type=float, default=0.3, help='Weight for object center in crop calculation (Default 0.3)')
+    parser.add_argument('--motion_weight', type=float, default=0.3, help='Weight for object motion in crop calculation (Default 0.3)')
+    parser.add_argument('--history_weight', type=float, default=0.1, help='Weight for object history in crop calculation (Default 0.1)')
+    parser.add_argument('--saliency_weight', type=float, default=0.4, help='Weight for saliency in crop calculation (Default 0.4)')
     parser.add_argument('--face_detection', action='store_true', default=False, help='Enable face detection for crop calculation')
     parser.add_argument('--weighted_center', action='store_true', default=False, help='Enable weighted center calculation for crop window')
     parser.add_argument('--blend_saliency', action='store_true', default=False, help='Enable blending of saliency map with detected objects for crop calculation')
@@ -234,13 +234,15 @@ def main(args=None):
             
             # Print progress every 10 keyframes
             if len(futures) % 10 == 0:
-                print(f"Submitted {len(futures)}/{len(keyframes)} keyframes for processing")
+                print(f"\r🤖 Submitted {len(futures)}/{len(keyframes)} keyframes for processing", end='', flush=True)
         
+        print(f"\n")
+
         # Wait for all futures to complete
         for i, future in enumerate(futures):
             future.result()  # This will raise any exceptions that occurred
             if (i + 1) % 10 == 0:
-                print(f"Processed {i + 1}/{len(keyframes)} keyframes")
+                print(f"\r🚀 Processed {i + 1}/{len(keyframes)} keyframes", end='', flush=True)
     
 
 
@@ -276,7 +278,7 @@ def main(args=None):
         crop_windows[frame_idx] = crop_window
         
         if frame_idx % 100 == 0:
-            print(f"Calculated crop window for keyframe {frame_idx}/{total_frames}")
+            print(f"\r✂️ Calculated crop window for keyframe {frame_idx}/{total_frames}", end='', flush=True)
     
 
 

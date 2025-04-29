@@ -175,7 +175,7 @@ class VideoProcessor:
                 continue
             
             if i % 100 == 0:
-                print(f"Processed {i}/{len(crop_windows)} frames for output video")
+                print(f"\r🎥 Processed {i}/{len(crop_windows)} frames for output video", end='', flush=True)
         
         # Release resources
         if self.writer:

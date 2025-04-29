@@ -23,7 +23,6 @@ MAX_WORKERS=6
 # 1:1 aspect ratio is 1.0
 TARGET_RATIO=0.5625
 
-
 # Check if the input file is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <filename>"
@@ -61,6 +60,8 @@ python main.py  --input "${FILENAME}" \
                 --smoothing_window ${SMOOTHING_WINDOW} \
                 --conf_threshold ${CONF_THRESHOLD} \
                 --max_workers ${MAX_WORKERS}
+
+
 
 mv ${PROCESSED_FILENAME} ${OUTPUT_FOLDER}/${BASE_FILENAME}
 echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
