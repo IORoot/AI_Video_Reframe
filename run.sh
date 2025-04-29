@@ -4,17 +4,14 @@
 MODEL_SIZE="x"
 
 # Number of frames to skip for saliency detection
-SKIP_FRAMES=5
+SKIP_FRAMES=10
 
 # Number of frames for temporal video smoothing
-SMOOTHING_WINDOW=2
+SMOOTHING_WINDOW=10
 
 # Confidence threshold for saliency detection
 # 0.0 to 1.0
 CONF_THRESHOLD=0.4
-
-# Use saliency detection
-USE_SALIENCY="--use_saliency"
 
 # Number of workers for processing
 # This should be set to the number of CPU cores available
@@ -34,9 +31,10 @@ if [ "$#" -ne 1 ]; then
 fi
 
 FILENAME=$1
+BASE_FILENAME=$(basename "${FILENAME}")
 ABSOLUTE_PATH=$(realpath "$FILENAME")
 ABSOLUTE_DIR=$(dirname "$ABSOLUTE_PATH")
-OUTPUT_FOLDER="${ABSOLUTE_DIR}"
+OUTPUT_FOLDER="${ABSOLUTE_DIR}/portrait"
 PROCESSED_FILENAME="${FILENAME%.*}_processed.${FILENAME##*.}"
 PROCESSED_BASENAME=$(basename "${PROCESSED_FILENAME}")
 
@@ -48,8 +46,21 @@ if [ -f "${OUTPUT_FOLDER}/${PROCESSED_BASENAME}" ]; then
     exit 1
 fi
 
+echo "Making ${OUTPUT_FOLDER}"
+mkdir -p ${OUTPUT_FOLDER}
+
 echo "Processing:"
 echo --input "${FILENAME}" --output "${PROCESSED_FILENAME}" --model_size ${MODEL_SIZE} --skip_frames ${SKIP_FRAMES} --smoothing_window ${SMOOTHING_WINDOW} --conf_threshold ${CONF_THRESHOLD} ${USE_SALIENCY} --max_workers ${MAX_WORKERS} --target_ratio ${TARGET_RATIO}
-python main.py --input "${FILENAME}" --output "${PROCESSED_FILENAME}" --model_size ${MODEL_SIZE} --skip_frames ${SKIP_FRAMES} --smoothing_window ${SMOOTHING_WINDOW} --conf_threshold ${CONF_THRESHOLD} ${USE_SALIENCY} --max_workers ${MAX_WORKERS} --target_ratio ${TARGET_RATIO}
 
+
+python main.py  --input "${FILENAME}" \
+                --output "${PROCESSED_FILENAME}" \
+                --target_ratio ${TARGET_RATIO} \
+                --model_size ${MODEL_SIZE} \
+                --skip_frames ${SKIP_FRAMES} \
+                --smoothing_window ${SMOOTHING_WINDOW} \
+                --conf_threshold ${CONF_THRESHOLD} \
+                --max_workers ${MAX_WORKERS}
+
+mv ${PROCESSED_FILENAME} ${OUTPUT_FOLDER}/${BASE_FILENAME}
 echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"

@@ -4,27 +4,27 @@
 MODEL_SIZE="x"
 
 # Number of frames to skip for saliency detection
-SKIP_FRAMES=30
+SKIP_FRAMES=10
 
 # Number of frames for temporal video smoothing
-SMOOTHING_WINDOW=30
+SMOOTHING_WINDOW=20
 
 # Confidence threshold for saliency detection
 # 0.0 to 1.0
-CONF_THRESHOLD=0.7
+CONF_THRESHOLD=0.4
 
 # Use saliency detection
 USE_SALIENCY="--use_saliency"
 
 # Number of workers for processing
 # This should be set to the number of CPU cores available
-MAX_WORKERS=6
+MAX_WORKERS=8
 
 # Ratio of the target size to the original size
 # 4:3 aspect ratio is 0.75
 # 16:9 aspect ratio is 0.5625
 # 1:1 aspect ratio is 1.0
-TARGET_RATIO=0.75
+TARGET_RATIO=0.5625
 
 
 # Check if the input file is provided
@@ -36,9 +36,9 @@ fi
 FILENAME=$1
 ABSOLUTE_PATH=$(realpath "$FILENAME")
 ABSOLUTE_DIR=$(dirname "$ABSOLUTE_PATH")
-OUTPUT_FOLDER="${ABSOLUTE_DIR}"
+OUTPUT_FOLDER="${ABSOLUTE_DIR}/portrait"
 PROCESSED_FILENAME="${FILENAME%.*}_processed.${FILENAME##*.}"
-TRIMMED_FILENAME="${FILENAME%.*}_trimmed.${FILENAME##*.}"
+TRIMMED_FILENAME="trimmed_${FILENAME%.*}_trimmed.${FILENAME##*.}"
 
 echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
@@ -62,6 +62,6 @@ echo "Moving ${TRIMMED_FILENAME} to ${OUTPUT_FOLDER}"
 mv ${TRIMMED_FILENAME} ${OUTPUT_FOLDER}
 
 echo "Removing ${PROCESSED_FILENAME}"
-rm ${PROCESSED_FILENAME}
+# rm ${PROCESSED_FILENAME}
 
 echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
