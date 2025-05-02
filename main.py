@@ -18,39 +18,154 @@ from nicegui import ui
 def start_gui():
     """Start the NiceGUI interface."""
 
-    """Override default styles for NiceGUI."""
-    ui.query('.nicegui-content').classes('items-stretch')
-    # ui.query('.q-field__label').classes('l-auto w-full text-right')
-    # ui.query('.q-field--float .q-field__label').style('transform:none')
+    # Add custom styles using NiceGUI's style method
+    ui.add_head_html('''
+        <style>
+            .nicegui-content {
+                padding: 1rem;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .q-field__label {
+                color: #666;
+                font-size: 0.9rem;
+            }
+            .q-field__native {
+                padding: 0.5rem;
+            }
+            .q-btn {
+                font-weight: 500;
+                text-transform: none;
+            }
+            /* Override Quasar's row class */
+            .row {
+                flex-wrap: nowrap !important;
+                display: flex;
+                flex-direction: row;
+                width: 100%;
+            }
+            /* Ensure columns take up proper space */
+            .column {
+                flex: 1 1 50%;
+                min-width: 0;
+                width: 100%;
+            }
+            /* Make inputs full width */
+            .q-field {
+                width: 100%;
+            }
+            .q-field__control {
+                width: 100%;
+            }
+            .q-field__native {
+                width: 100%;
+            }
+            /* Make select boxes full width */
+            .q-select {
+                width: 100%;
+            }
+            .q-select__control {
+                width: 100%;
+            }
+            .q-field__append {
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                display: flex;
+                align-items: center;
+                padding-right: 8px;
+                width: auto;
+            }
+        </style>
+    ''')
 
-    ui.label('Content-Aware Video Cropping')
+    ui.label('Content-Aware Video Cropping').classes('text-2xl font-bold mb-4')
 
-    input_path = ui.input('Input Video Path')
-    output_path = ui.input('Output Video Path')
-    target_ratio = ui.number('Target Aspect Ratio (width/height)', value=9/16)
-    detector = ui.select(['yolo'], label='Object Detection Model', value='yolo')
-    smoothing_window = ui.number('Smoothing Window (frames)', value=30)
-    skip_frames = ui.number('Skip Frames', value=10)
-    model_size = ui.select(['n', 's', 'm', 'l', 'x'], label='YOLOv8 Model Size', value='n')
-    conf_threshold = ui.number('Confidence Threshold', value=0.5)
-    use_smoothing = ui.checkbox('Apply Temporal Smoothing', value=False)
-    max_workers = ui.number('Max Worker Threads', value=4)
-    
+    with ui.row().classes('w-full gap-4'):
+        # Left Column
+        with ui.column().classes('w-1/2'):
+            ui.label('Main Settings').classes('text-xl font-semibold mb-2')
+            
+            # Main inputs
+            input_path = ui.input('Input Video Path')
+            output_path = ui.input('Output Video Path')
+            target_ratio = ui.number('Target Aspect Ratio (width/height)', value=0.5625)
+            max_workers = ui.number('Max Worker Threads', value=6)
+
+            ui.label('Detector Settings').classes('text-xl font-semibold mt-4 mb-2')
+            # Detector settings
+            detector = ui.select(['yolo'], label='Object Detection Model', value='yolo')
+            skip_frames = ui.number('Skip Frames', value=10)
+            conf_threshold = ui.number('Confidence Threshold', value=0.4)
+            model_size = ui.select(['n', 's', 'm', 'l', 'x'], label='YOLOv8 Model Size', value='x')
+            object_classes = ui.input('Object Classes (comma-separated)', value='0')
+            track_count = ui.number('Track Count (Number of objects to track)', value=1)
+
+        # Right Column
+        with ui.column().classes('w-1/2'):
+            ui.label('Crop Settings').classes('text-xl font-semibold mb-2')
+            # Crop calculator settings
+            padding_ratio = ui.number('Padding Ratio', value=0.1)
+            size_weight = ui.number('Size Weight', value=0.4)
+            center_weight = ui.number('Center Weight', value=0.3)
+            motion_weight = ui.number('Motion Weight', value=0.3)
+            history_weight = ui.number('History Weight', value=0.1)
+            saliency_weight = ui.number('Saliency Weight', value=0.4)
+
+            ui.label('Feature Toggles').classes('text-xl font-semibold mt-4 mb-2')
+            # Feature toggles
+            with ui.row().classes('gap-4'):
+                face_detection = ui.checkbox('Face Detection', value=False)
+                weighted_center = ui.checkbox('Weighted Center', value=False)
+                blend_saliency = ui.checkbox('Blend Saliency', value=False)
+
+            ui.label('Smoothing Settings').classes('text-xl font-semibold mt-4 mb-2')
+            # Smoothing settings
+            apply_smoothing = ui.checkbox('Apply Temporal Smoothing', value=True)
+            smoothing_window = ui.number('Smoothing Window (frames)', value=30)
+            position_inertia = ui.number('Position Inertia', value=0.8)
+            size_inertia = ui.number('Size Inertia', value=0.9)
+
+            ui.label('Debug').classes('text-xl font-semibold mt-4 mb-2')
+            # Debug mode
+            debug = ui.checkbox('Debug Mode', value=False)
+
+    # Run button centered at the bottom
+    with ui.row().classes('w-full justify-center mt-4'):
+        ui.button('Run', on_click=lambda: run_script()).classes('bg-blue-500 hover:bg-blue-600 text-white px-8 py-2 rounded-lg')
 
     def run_script():
         ui.notify('Processing started...')
         try:
+            # Convert object_classes string to list of integers
+            object_classes_list = [int(x.strip()) for x in object_classes.value.split(',')]
+
             args = argparse.Namespace(
                 input=input_path.value,
                 output=output_path.value,
-                target_ratio=target_ratio.value,
-                detector=detector.value,
-                smoothing_window=int(smoothing_window.value),
-                skip_frames=int(skip_frames.value),
-                model_size=model_size.value,
-                conf_threshold=float(conf_threshold.value),
+                target_ratio=float(target_ratio.value),
                 max_workers=int(max_workers.value),
-                apply_smoothing=use_smoothing.value
+                detector=detector.value,
+                skip_frames=int(skip_frames.value),
+                conf_threshold=float(conf_threshold.value),
+                model_size=model_size.value,
+                object_classes=object_classes_list,
+                track_count=int(track_count.value),
+                padding_ratio=float(padding_ratio.value),
+                size_weight=float(size_weight.value),
+                center_weight=float(center_weight.value),
+                motion_weight=float(motion_weight.value),
+                history_weight=float(history_weight.value),
+                saliency_weight=float(saliency_weight.value),
+                face_detection=face_detection.value,
+                weighted_center=weighted_center.value,
+                blend_saliency=blend_saliency.value,
+                apply_smoothing=apply_smoothing.value,
+                smoothing_window=int(smoothing_window.value),
+                position_inertia=float(position_inertia.value),
+                size_inertia=float(size_inertia.value),
+                debug=debug.value
             )
             main(args)
             ui.notify('Processing complete!')
@@ -59,9 +174,7 @@ def start_gui():
             print(traceback.format_exc())
             ui.notify(f"Error: {str(e)}")
 
-    ui.button('Run', on_click=run_script)
-
-    ui.run()
+    ui.run(dark=False)
 
 
 
@@ -89,7 +202,6 @@ def parse_args():
 
     # Crop calculator args
     parser.add_argument('--padding_ratio', type=float, default=0.1, help='Padding ratio for crop window (Default 0.1)')
-    parser.add_argument('--class_weights', type=float, nargs='+', default=None, help='Class weights for object importance (Default None)')
     parser.add_argument('--size_weight', type=float, default=0.4, help='Weight for object size in crop calculation (Default 0.4)')
     parser.add_argument('--center_weight', type=float, default=0.3, help='Weight for object center in crop calculation (Default 0.3)')
     parser.add_argument('--motion_weight', type=float, default=0.3, help='Weight for object motion in crop calculation (Default 0.3)')
@@ -160,7 +272,6 @@ def main(args=None):
     crop_calculator = CropCalculator(
         target_ratio=args.target_ratio,         # 📐 Desired aspect ratio of the crop (e.g., 16/9 for widescreen). Example: 1.77
         padding_ratio=args.padding_ratio,       # ➡️ Add 10% padding around the detected area to avoid tight crops.
-        class_weights=args.class_weights,       # 🏷️ Optional: prioritize certain object classes (e.g., faces over background). Example: {0: 1.0, 1: 0.5}
         size_weight=args.size_weight,           # 📏 How much object size matters (larger objects are more important).
         center_weight=args.center_weight,       # 🎯 How much being close to the frame center matters (centered objects preferred).
         motion_weight=args.motion_weight,       # 🎥 How much moving objects are prioritized (good for tracking action).

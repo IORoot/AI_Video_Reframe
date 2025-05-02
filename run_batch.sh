@@ -11,7 +11,7 @@ RUNFILE="run_all_found_files.sh"
 echo '#!/bin/bash' > $RUNFILE
 
 # Python doesn't like a loop and therefore we need to use xargs to a file instead
-find "$1" -type f -name "*.mp4" ! -path "*trimmed*" ! -path "*portrait*" | xargs realpath | sed 's|^|./run.sh |' >> $RUNFILE
+find "$1" -type f -name "*.mp4" ! -path "*trimmed*" ! -path "*portrait*" | xargs realpath | sed 's|^|./run.sh -i |' >> $RUNFILE
 
 # Make the file executable
 chmod +x $RUNFILE
