@@ -21,10 +21,10 @@ USE_SALIENCY="--use_saliency"
 MAX_WORKERS=8
 
 # Ratio of the target size to the original size
-# 4:3 aspect ratio is 0.75
+# 3:4 aspect ratio is 0.75
 # 16:9 aspect ratio is 0.5625
 # 1:1 aspect ratio is 1.0
-TARGET_RATIO=0.5625
+TARGET_RATIO=0.75
 
 
 # Check if the input file is provided

@@ -185,8 +185,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Content-aware video cropping')
 
     # Main args
-    parser.add_argument('--input', type=str, required=True, help='Input video path')
-    parser.add_argument('--output', type=str, required=True, help='Output video path')
+    parser.add_argument('--input', type=str, required=True, help='Input video filename')
+    parser.add_argument('--output', type=str, required=True, help='Output video filename')
     parser.add_argument('--target_ratio', type=float, default=9/16, help='Target aspect ratio (width/height)')
     parser.add_argument('--max_workers', type=int, default=4, help='Maximum number of worker threads for parallel processing')
 

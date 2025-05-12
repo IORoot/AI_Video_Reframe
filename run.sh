@@ -10,10 +10,11 @@
 # ╰──────────────────────────────────────────────────────────╯
 
 # Ratio of the target size to the original size
+# 4:5 aspect ratio is 0.8 (instagram)
 # 4:3 aspect ratio is 0.75
-# 16:9 aspect ratio is 0.5625
+# 9:16 aspect ratio is 0.5625
 # 1:1 aspect ratio is 1.0
-TARGET_RATIO=0.5625
+TARGET_RATIO=0.75
 
 # Number of workers for processing
 # This should be set to the number of CPU cores available
@@ -297,7 +298,10 @@ function main()
     PROCESSED_FILENAME="${FILENAME%.*}_processed.${FILENAME##*.}"
     PROCESSED_BASENAME=$(basename "${PROCESSED_FILENAME}")
 
-    echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    printf "\n\n ################ 🚀 PROCESSING ######################\n"
+    echo " $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    printf " ${FILENAME}\n"
+    printf " ####################################################\n\n"
 
     echo "Checking if file exists: ${OUTPUT_FOLDER}/${PROCESSED_FILENAME}"
     if [ -f "${OUTPUT_FOLDER}/${PROCESSED_BASENAME}" ]; then
