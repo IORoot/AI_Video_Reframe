@@ -2,6 +2,8 @@
 
 Batch convert landscape to portrait videos using AI.
 
+forked from [https://github.com/Sagar-lab03/AI-Content-Aware-Video-Cropping](https://github.com/Sagar-lab03/AI-Content-Aware-Video-Cropping)
+
 ---
 
 ## Intro

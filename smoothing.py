@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 class CropWindowSmoother:
     """Class for applying temporal smoothing to crop windows."""

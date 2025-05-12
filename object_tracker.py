@@ -13,6 +13,10 @@ class ObjectTracker:
         self.max_disappeared = max_disappeared  # Maximum number of frames an object can be missing
         self.max_distance = max_distance  # Maximum distance for considering it the same object
     
+
+
+
+
     def _calculate_iou(self, box1, box2):
         """Calculate Intersection over Union (IoU) between two bounding boxes."""
         # Extract coordinates
@@ -41,6 +45,12 @@ class ObjectTracker:
         
         return iou
     
+
+
+
+
+
+
     def _calculate_distance(self, box1, box2):
         """Calculate distance between centers of two bounding boxes."""
         # Extract coordinates
@@ -54,6 +64,11 @@ class ObjectTracker:
         # Calculate Euclidean distance
         return np.sqrt((center1[0] - center2[0]) ** 2 + (center1[1] - center2[1]) ** 2)
     
+
+
+
+
+
     def update(self, frame, detections):
         """
         Update object tracking with new detections.
@@ -146,12 +161,22 @@ class ObjectTracker:
         return {object_id: self.objects[object_id] for object_id in self.objects 
                 if self.disappeared[object_id] <= self.max_disappeared}
     
+
+
+
+
+
     def _register(self, detection):
         """Register a new object."""
         self.objects[self.next_object_id] = detection
         self.disappeared[self.next_object_id] = 0
         self.next_object_id += 1
     
+
+
+
+
+
     def _deregister(self, object_id):
         """Deregister an object."""
         del self.objects[object_id]
