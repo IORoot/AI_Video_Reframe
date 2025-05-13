@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Processing App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .file-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        #filePath {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f8f8;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .processing {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .settings-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .settings-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .settings-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .settings-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .settings-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 1.1em;
+        }
+        .setting-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .setting-row.checkbox {
+            margin-bottom: 5px;
+        }
+        .setting-row label {
+            min-width: 150px;
+            font-weight: 500;
+        }
+        .setting-row input[type="number"],
+        .setting-row input[type="text"],
+        .setting-row select {
+            width: 100px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .setting-row.checkbox input[type="checkbox"] {
+            margin: 0;
+        }
+        .setting-row.checkbox label {
+            min-width: auto;
+            margin-left: 5px;
+        }
+        .help-text {
+            color: #666;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+        select {
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Processing</h1>
+        <div class="input-group">
+            <div class="file-input">
+                <input type="text" id="filePath" readonly placeholder="Select a video file...">
+                <button id="selectFile">Browse</button>
+            </div>
+            <button id="processButton" disabled>Process Video</button>
+        </div>
+
+        <div class="settings-panel">
+            <h2>Processing Settings</h2>
+            
+            <div class="settings-section">
+                <h3>Basic Settings</h3>
+                <div class="setting-row">
+                    <label for="targetRatio">Target Aspect Ratio:</label>
+                    <input type="number" id="targetRatio" value="0.75" step="0.01" min="0.1" max="2.0">
+                    <span class="help-text">(0.75 = 4:3, 0.5625 = 16:9, 1.0 = 1:1)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="maxWorkers">Max Workers:</label>
+                    <input type="number" id="maxWorkers" value="6" min="1" max="32">
+                    <span class="help-text">(Number of CPU cores to use)</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Detection Settings</h3>
+                <div class="setting-row">
+                    <label for="detector">Detector Model:</label>
+                    <select id="detector">
+                        <option value="yolo">YOLO</option>
+                        <option value="ssd">SSD</option>
+                        <option value="faster_rcnn">Faster R-CNN</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="skipFrames">Skip Frames:</label>
+                    <input type="number" id="skipFrames" value="10" min="0" max="100">
+                    <span class="help-text">(Process every Nth frame)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="confThreshold">Confidence Threshold:</label>
+                    <input type="number" id="confThreshold" value="0.4" step="0.1" min="0.1" max="1.0">
+                    <span class="help-text">(0.0 to 1.0)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="modelSize">Model Size:</label>
+                    <select id="modelSize">
+                        <option value="n">Nano (Fastest)</option>
+                        <option value="s">Small</option>
+                        <option value="m">Medium</option>
+                        <option value="l">Large</option>
+                        <option value="x" selected>XLarge (Most Accurate)</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="objectClasses">Object Classes:</label>
+                    <input type="text" id="objectClasses" value="0" placeholder="0,1,2">
+                    <span class="help-text">(Comma-separated, 0=person)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="trackCount">Track Count:</label>
+                    <input type="number" id="trackCount" value="1" min="1" max="10">
+                    <span class="help-text">(Number of objects to track)</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Crop Settings</h3>
+                <div class="setting-row">
+                    <label for="paddingRatio">Padding Ratio:</label>
+                    <input type="number" id="paddingRatio" value="0.1" step="0.01" min="0" max="1.0">
+                    <span class="help-text">(Space around detected objects)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="sizeWeight">Size Weight:</label>
+                    <input type="number" id="sizeWeight" value="0.4" step="0.1" min="0" max="1.0">
+                    <span class="help-text">(Importance of object size)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="centerWeight">Center Weight:</label>
+                    <input type="number" id="centerWeight" value="0.3" step="0.1" min="0" max="1.0">
+                    <span class="help-text">(Importance of center position)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="motionWeight">Motion Weight:</label>
+                    <input type="number" id="motionWeight" value="0.3" step="0.1" min="0" max="1.0">
+                    <span class="help-text">(Importance of object motion)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="historyWeight">History Weight:</label>
+                    <input type="number" id="historyWeight" value="0.1" step="0.1" min="0" max="1.0">
+                    <span class="help-text">(Importance of object history)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="saliencyWeight">Saliency Weight:</label>
+                    <input type="number" id="saliencyWeight" value="0.4" step="0.1" min="0" max="1.0">
+                    <span class="help-text">(Importance of visual saliency)</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Feature Toggles</h3>
+                <div class="setting-row checkbox">
+                    <input type="checkbox" id="faceDetection">
+                    <label for="faceDetection">Face Detection</label>
+                </div>
+                <div class="setting-row checkbox">
+                    <input type="checkbox" id="weightedCenter">
+                    <label for="weightedCenter">Weighted Center</label>
+                </div>
+                <div class="setting-row checkbox">
+                    <input type="checkbox" id="blendSaliency">
+                    <label for="blendSaliency">Blend Saliency</label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Smoothing Settings</h3>
+                <div class="setting-row checkbox">
+                    <input type="checkbox" id="applySmoothing" checked>
+                    <label for="applySmoothing">Apply Temporal Smoothing</label>
+                </div>
+                <div class="setting-row">
+                    <label for="smoothingWindow">Smoothing Window:</label>
+                    <input type="number" id="smoothingWindow" value="30" min="1" max="100">
+                    <span class="help-text">(Frames for smoothing)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="positionInertia">Position Inertia:</label>
+                    <input type="number" id="positionInertia" value="0.8" step="0.1" min="0" max="1.0">
+                    <span class="help-text">(How much position sticks to previous frame)</span>
+                </div>
+                <div class="setting-row">
+                    <label for="sizeInertia">Size Inertia:</label>
+                    <input type="number" id="sizeInertia" value="0.9" step="0.1" min="0" max="1.0">
+                    <span class="help-text">(How much size sticks to previous frame)</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Debug</h3>
+                <div class="setting-row checkbox">
+                    <input type="checkbox" id="debug">
+                    <label for="debug">Debug Mode</label>
+                </div>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const selectFileButton = document.getElementById('selectFile');
+        const processButton = document.getElementById('processButton');
+        const filePathInput = document.getElementById('filePath');
+        const statusDiv = document.getElementById('status');
+
+        function showStatus(message, type) {
+            statusDiv.innerHTML = message.replace(/\n/g, '<br>');
+            statusDiv.style.display = 'block';
+            statusDiv.className = type;
+        }
+
+        selectFileButton.addEventListener('click', async () => {
+            const filePath = await window.electronAPI.selectFile();
+            if (filePath) {
+                filePathInput.value = filePath;
+                processButton.disabled = false;
+            }
+        });
+
+        // Add event listeners for all settings
+        const settings = {
+            targetRatio: document.getElementById('targetRatio'),
+            maxWorkers: document.getElementById('maxWorkers'),
+            detector: document.getElementById('detector'),
+            skipFrames: document.getElementById('skipFrames'),
+            confThreshold: document.getElementById('confThreshold'),
+            modelSize: document.getElementById('modelSize'),
+            objectClasses: document.getElementById('objectClasses'),
+            trackCount: document.getElementById('trackCount'),
+            paddingRatio: document.getElementById('paddingRatio'),
+            sizeWeight: document.getElementById('sizeWeight'),
+            centerWeight: document.getElementById('centerWeight'),
+            motionWeight: document.getElementById('motionWeight'),
+            historyWeight: document.getElementById('historyWeight'),
+            saliencyWeight: document.getElementById('saliencyWeight'),
+            faceDetection: document.getElementById('faceDetection'),
+            weightedCenter: document.getElementById('weightedCenter'),
+            blendSaliency: document.getElementById('blendSaliency'),
+            applySmoothing: document.getElementById('applySmoothing'),
+            smoothingWindow: document.getElementById('smoothingWindow'),
+            positionInertia: document.getElementById('positionInertia'),
+            sizeInertia: document.getElementById('sizeInertia'),
+            debug: document.getElementById('debug')
+        };
+
+        processButton.addEventListener('click', async () => {
+            const videoPath = filePathInput.value;
+            if (!videoPath) return;
+
+            processButton.disabled = true;
+            selectFileButton.disabled = true;
+            showStatus('Processing video...', 'processing');
+
+            try {
+                // Convert object classes string to array of numbers
+                const objectClassesArray = settings.objectClasses.value.split(',').map(x => parseInt(x.trim()));
+
+                const result = await window.electronAPI.runPythonScript(videoPath, {
+                    target_ratio: parseFloat(settings.targetRatio.value),
+                    max_workers: parseInt(settings.maxWorkers.value),
+                    detector: settings.detector.value,
+                    skip_frames: parseInt(settings.skipFrames.value),
+                    conf_threshold: parseFloat(settings.confThreshold.value),
+                    model_size: settings.modelSize.value,
+                    object_classes: objectClassesArray,
+                    track_count: parseInt(settings.trackCount.value),
+                    padding_ratio: parseFloat(settings.paddingRatio.value),
+                    size_weight: parseFloat(settings.sizeWeight.value),
+                    center_weight: parseFloat(settings.centerWeight.value),
+                    motion_weight: parseFloat(settings.motionWeight.value),
+                    history_weight: parseFloat(settings.historyWeight.value),
+                    saliency_weight: parseFloat(settings.saliencyWeight.value),
+                    face_detection: settings.faceDetection.checked,
+                    weighted_center: settings.weightedCenter.checked,
+                    blend_saliency: settings.blendSaliency.checked,
+                    apply_smoothing: settings.applySmoothing.checked,
+                    smoothing_window: parseInt(settings.smoothingWindow.value),
+                    position_inertia: parseFloat(settings.positionInertia.value),
+                    size_inertia: parseFloat(settings.sizeInertia.value),
+                    debug: settings.debug.checked
+                });
+
+                if (result.success) {
+                    showStatus(`Video processing completed successfully!\nOutput saved to: ${result.outputPath}`, 'success');
+                } else {
+                    showStatus(`Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                const errorMessage = error.error || error.message || 'An unknown error occurred';
+                const errorDetails = error.stack ? `\n\nDetails: ${error.stack}` : '';
+                showStatus(`Error: ${errorMessage}${errorDetails}`, 'error');
+                
+                console.error('Processing error:', error);
+            } finally {
+                processButton.disabled = false;
+                selectFileButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html> 

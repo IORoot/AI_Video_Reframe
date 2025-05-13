@@ -1,0 +1,42 @@
+{
+  "name": "video-processing-app",
+  "version": "1.0.0",
+  "description": "Video Processing Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "author": "Andy Pearson",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "python-shell": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.londonparkour.videoprocessing",
+    "mac": {
+      "category": "public.app-category.video"
+    },
+    "files": [
+      "**/*",
+      "!venv/**/*",
+      "!**/__pycache__/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "venv",
+        "to": "venv",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "models",
+        "to": "models",
+        "filter": ["**/*"]
+      }
+    ]
+  }
+} 
