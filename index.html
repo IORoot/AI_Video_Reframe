@@ -1,313 +1,286 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Video Processing App</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .input-group {
-            margin-bottom: 20px;
-        }
-        .file-input {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        button {
-            background-color: #007AFF;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        button:hover:not(:disabled) {
-            background-color: #0056b3;
-        }
-        #filePath {
-            flex-grow: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f8f8f8;
-        }
-        #status {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-        }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .processing {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-        }
-        .settings-panel {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
-        .settings-section {
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #dee2e6;
-        }
-        .settings-section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        .settings-section h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #333;
-        }
-        .settings-section h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: #555;
-            font-size: 1.1em;
-        }
-        .setting-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            gap: 10px;
-        }
-        .setting-row.checkbox {
-            margin-bottom: 5px;
-        }
-        .setting-row label {
-            min-width: 150px;
-            font-weight: 500;
-        }
-        .setting-row input[type="number"],
-        .setting-row input[type="text"],
-        .setting-row select {
-            width: 100px;
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .setting-row.checkbox input[type="checkbox"] {
-            margin: 0;
-        }
-        .setting-row.checkbox label {
-            min-width: auto;
-            margin-left: 5px;
-        }
-        .help-text {
-            color: #666;
-            font-size: 0.9em;
-            font-style: italic;
-        }
-        select {
-            background-color: white;
-        }
-    </style>
+    <title>Reframe - Video Reframing Tool</title>
+    <link href="./dist/styles.css" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
-        <h1>Video Processing</h1>
-        <div class="input-group">
-            <div class="file-input">
-                <input type="text" id="filePath" readonly placeholder="Select a video file...">
-                <button id="selectFile">Browse</button>
+<body class="font-sans bg-gray-100 m-0 p-5">
+    <div class="max-w-2xl mx-auto bg-white p-5 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">Video Reframing</h1>
+        <div class="mb-5">
+            <div class="flex items-center gap-2.5 mb-2.5">
+                <input type="text" id="filePath" readonly placeholder="Select a video file..." class="flex-grow px-2 py-2 border border-gray-300 rounded bg-gray-50">
+                <button id="selectFile" class="btn btn-primary">Browse</button>
             </div>
-            <button id="processButton" disabled>Process Video</button>
+            <div class="flex items-center gap-2.5 mb-2.5">
+                <input type="text" id="outputDir" readonly placeholder="Select output directory..." class="flex-grow px-2 py-2 border border-gray-300 rounded bg-gray-50">
+                <button id="selectOutputDir" class="btn btn-primary">Browse</button>
+            </div>
+            <div class="flex items-center gap-2.5 mb-2.5">
+                <label for="outputFilename" class="min-w-[150px] font-medium">Output Filename:</label>
+                <input type="text" id="outputFilename" placeholder="Enter output filename (without extension)" class="input flex-grow">
+                <span class="text-sm text-gray-600 italic">(Optional - will use timestamp if empty)</span>
+            </div>
+            <div class="flex gap-2.5">
+                <button id="processButton" disabled class="btn btn-primary flex-grow disabled:bg-gray-300 disabled:cursor-not-allowed">Process Video</button>
+                <button id="cancelButton" class="btn btn-secondary hidden">Cancel</button>
+            </div>
         </div>
 
-        <div class="settings-panel">
-            <h2>Processing Settings</h2>
+        <div class="mt-5 p-5 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">Processing Settings</h2>
+                <button id="toggleAllSettings" class="text-sm text-blue-600 hover:text-blue-800">Expand All</button>
+            </div>
             
-            <div class="settings-section">
-                <h3>Basic Settings</h3>
-                <div class="setting-row">
-                    <label for="targetRatio">Target Aspect Ratio:</label>
-                    <input type="number" id="targetRatio" value="0.75" step="0.01" min="0.1" max="2.0">
-                    <span class="help-text">(0.75 = 4:3, 0.5625 = 16:9, 1.0 = 1:1)</span>
+            <div class="space-y-2">
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="accordion-header w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors" data-section="basic">
+                        <h3 class="text-lg font-medium text-gray-700">Basic Settings</h3>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="accordion-content hidden p-4 bg-white border-t border-gray-200">
+                        <div class="space-y-2.5">
+                            <div class="flex items-center gap-2.5">
+                                <label for="targetRatio" class="min-w-[150px] font-medium">Target Aspect Ratio:</label>
+                                <input type="number" id="targetRatio" value="0.75" step="0.01" min="0.1" max="2.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(0.75 = 4:3, 0.5625 = 16:9, 1.0 = 1:1)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label class="min-w-[150px] font-medium">Calculate Ratio:</label>
+                                <div class="flex items-center gap-3 bg-gray-50 p-2 rounded border border-gray-200">
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="widthInput" placeholder="Width" class="input w-28 bg-white" min="1">
+                                        <span class="text-gray-600 font-medium">×</span>
+                                        <input type="number" id="heightInput" placeholder="Height" class="input w-28 bg-white" min="1">
+                                    </div>
+                                    <button id="calculateRatio" class="btn btn-secondary text-sm px-4 ml-2">Calculate</button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="maxWorkers" class="min-w-[150px] font-medium">Max Workers:</label>
+                                <input type="number" id="maxWorkers" value="6" min="1" max="32" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Number of CPU cores to use)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-row">
-                    <label for="maxWorkers">Max Workers:</label>
-                    <input type="number" id="maxWorkers" value="6" min="1" max="32">
-                    <span class="help-text">(Number of CPU cores to use)</span>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h3>Detection Settings</h3>
-                <div class="setting-row">
-                    <label for="detector">Detector Model:</label>
-                    <select id="detector">
-                        <option value="yolo">YOLO</option>
-                        <option value="ssd">SSD</option>
-                        <option value="faster_rcnn">Faster R-CNN</option>
-                    </select>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="accordion-header w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors" data-section="detection">
+                        <h3 class="text-lg font-medium text-gray-700">Detection Settings</h3>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="accordion-content hidden p-4 bg-white border-t border-gray-200">
+                        <div class="space-y-2.5">
+                            <div class="flex items-center gap-2.5">
+                                <label for="detector" class="min-w-[150px] font-medium">Detector Model:</label>
+                                <select id="detector" class="input w-24 bg-white" disabled>
+                                    <option value="yolo" selected>YOLO</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="skipFrames" class="min-w-[150px] font-medium">Skip Frames:</label>
+                                <input type="number" id="skipFrames" value="10" min="0" max="100" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Process every Nth frame)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="confThreshold" class="min-w-[150px] font-medium">Confidence Threshold:</label>
+                                <input type="number" id="confThreshold" value="0.4" step="0.1" min="0.1" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(0.0 to 1.0)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="modelSize" class="min-w-[150px] font-medium">Model Size:</label>
+                                <select id="modelSize" class="input w-24 bg-white">
+                                    <option value="n">Nano (Fastest)</option>
+                                    <option value="s">Small</option>
+                                    <option value="m">Medium</option>
+                                    <option value="l">Large</option>
+                                    <option value="x" selected>XLarge (Most Accurate)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="objectClasses" class="min-w-[150px] font-medium">Object Classes:</label>
+                                <input type="text" id="objectClasses" value="0" placeholder="0,1,2" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Comma-separated, 0=person)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="trackCount" class="min-w-[150px] font-medium">Track Count:</label>
+                                <input type="number" id="trackCount" value="1" min="1" max="10" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Number of objects to track)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-row">
-                    <label for="skipFrames">Skip Frames:</label>
-                    <input type="number" id="skipFrames" value="10" min="0" max="100">
-                    <span class="help-text">(Process every Nth frame)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="confThreshold">Confidence Threshold:</label>
-                    <input type="number" id="confThreshold" value="0.4" step="0.1" min="0.1" max="1.0">
-                    <span class="help-text">(0.0 to 1.0)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="modelSize">Model Size:</label>
-                    <select id="modelSize">
-                        <option value="n">Nano (Fastest)</option>
-                        <option value="s">Small</option>
-                        <option value="m">Medium</option>
-                        <option value="l">Large</option>
-                        <option value="x" selected>XLarge (Most Accurate)</option>
-                    </select>
-                </div>
-                <div class="setting-row">
-                    <label for="objectClasses">Object Classes:</label>
-                    <input type="text" id="objectClasses" value="0" placeholder="0,1,2">
-                    <span class="help-text">(Comma-separated, 0=person)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="trackCount">Track Count:</label>
-                    <input type="number" id="trackCount" value="1" min="1" max="10">
-                    <span class="help-text">(Number of objects to track)</span>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h3>Crop Settings</h3>
-                <div class="setting-row">
-                    <label for="paddingRatio">Padding Ratio:</label>
-                    <input type="number" id="paddingRatio" value="0.1" step="0.01" min="0" max="1.0">
-                    <span class="help-text">(Space around detected objects)</span>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="accordion-header w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors" data-section="crop">
+                        <h3 class="text-lg font-medium text-gray-700">Crop Settings</h3>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="accordion-content hidden p-4 bg-white border-t border-gray-200">
+                        <div class="space-y-2.5">
+                            <div class="flex items-center gap-2.5">
+                                <label for="paddingRatio" class="min-w-[150px] font-medium">Padding Ratio:</label>
+                                <input type="number" id="paddingRatio" value="0.1" step="0.01" min="0" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Space around detected objects)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="sizeWeight" class="min-w-[150px] font-medium">Size Weight:</label>
+                                <input type="number" id="sizeWeight" value="0.4" step="0.1" min="0" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Importance of object size)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="centerWeight" class="min-w-[150px] font-medium">Center Weight:</label>
+                                <input type="number" id="centerWeight" value="0.3" step="0.1" min="0" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Importance of center position)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="motionWeight" class="min-w-[150px] font-medium">Motion Weight:</label>
+                                <input type="number" id="motionWeight" value="0.3" step="0.1" min="0" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Importance of object motion)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="historyWeight" class="min-w-[150px] font-medium">History Weight:</label>
+                                <input type="number" id="historyWeight" value="0.1" step="0.1" min="0" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Importance of object history)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="saliencyWeight" class="min-w-[150px] font-medium">Saliency Weight:</label>
+                                <input type="number" id="saliencyWeight" value="0.4" step="0.1" min="0" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Importance of visual saliency)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-row">
-                    <label for="sizeWeight">Size Weight:</label>
-                    <input type="number" id="sizeWeight" value="0.4" step="0.1" min="0" max="1.0">
-                    <span class="help-text">(Importance of object size)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="centerWeight">Center Weight:</label>
-                    <input type="number" id="centerWeight" value="0.3" step="0.1" min="0" max="1.0">
-                    <span class="help-text">(Importance of center position)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="motionWeight">Motion Weight:</label>
-                    <input type="number" id="motionWeight" value="0.3" step="0.1" min="0" max="1.0">
-                    <span class="help-text">(Importance of object motion)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="historyWeight">History Weight:</label>
-                    <input type="number" id="historyWeight" value="0.1" step="0.1" min="0" max="1.0">
-                    <span class="help-text">(Importance of object history)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="saliencyWeight">Saliency Weight:</label>
-                    <input type="number" id="saliencyWeight" value="0.4" step="0.1" min="0" max="1.0">
-                    <span class="help-text">(Importance of visual saliency)</span>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h3>Feature Toggles</h3>
-                <div class="setting-row checkbox">
-                    <input type="checkbox" id="faceDetection">
-                    <label for="faceDetection">Face Detection</label>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="accordion-header w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors" data-section="features">
+                        <h3 class="text-lg font-medium text-gray-700">Feature Toggles</h3>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="accordion-content hidden p-4 bg-white border-t border-gray-200">
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="faceDetection" class="m-0">
+                                <label for="faceDetection" class="ml-1.5">Face Detection</label>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="weightedCenter" class="m-0">
+                                <label for="weightedCenter" class="ml-1.5">Weighted Center</label>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="blendSaliency" class="m-0">
+                                <label for="blendSaliency" class="ml-1.5">Blend Saliency</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-row checkbox">
-                    <input type="checkbox" id="weightedCenter">
-                    <label for="weightedCenter">Weighted Center</label>
-                </div>
-                <div class="setting-row checkbox">
-                    <input type="checkbox" id="blendSaliency">
-                    <label for="blendSaliency">Blend Saliency</label>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h3>Smoothing Settings</h3>
-                <div class="setting-row checkbox">
-                    <input type="checkbox" id="applySmoothing" checked>
-                    <label for="applySmoothing">Apply Temporal Smoothing</label>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="accordion-header w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors" data-section="smoothing">
+                        <h3 class="text-lg font-medium text-gray-700">Smoothing Settings</h3>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="accordion-content hidden p-4 bg-white border-t border-gray-200">
+                        <div class="space-y-2.5">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="applySmoothing" checked class="m-0">
+                                <label for="applySmoothing" class="ml-1.5">Apply Temporal Smoothing</label>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="smoothingWindow" class="min-w-[150px] font-medium">Smoothing Window:</label>
+                                <input type="number" id="smoothingWindow" value="30" min="1" max="100" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(Frames for smoothing)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="positionInertia" class="min-w-[150px] font-medium">Position Inertia:</label>
+                                <input type="number" id="positionInertia" value="0.8" step="0.1" min="0" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(How much position sticks to previous frame)</span>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <label for="sizeInertia" class="min-w-[150px] font-medium">Size Inertia:</label>
+                                <input type="number" id="sizeInertia" value="0.9" step="0.1" min="0" max="1.0" class="input w-24">
+                                <span class="text-sm text-gray-600 italic">(How much size sticks to previous frame)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-row">
-                    <label for="smoothingWindow">Smoothing Window:</label>
-                    <input type="number" id="smoothingWindow" value="30" min="1" max="100">
-                    <span class="help-text">(Frames for smoothing)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="positionInertia">Position Inertia:</label>
-                    <input type="number" id="positionInertia" value="0.8" step="0.1" min="0" max="1.0">
-                    <span class="help-text">(How much position sticks to previous frame)</span>
-                </div>
-                <div class="setting-row">
-                    <label for="sizeInertia">Size Inertia:</label>
-                    <input type="number" id="sizeInertia" value="0.9" step="0.1" min="0" max="1.0">
-                    <span class="help-text">(How much size sticks to previous frame)</span>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h3>Debug</h3>
-                <div class="setting-row checkbox">
-                    <input type="checkbox" id="debug">
-                    <label for="debug">Debug Mode</label>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <button class="accordion-header w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors" data-section="debug">
+                        <h3 class="text-lg font-medium text-gray-700">Debug</h3>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="accordion-content hidden p-4 bg-white border-t border-gray-200">
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-2.5">
+                                <input type="checkbox" id="debug" class="m-0">
+                                <label for="debug" class="ml-1.5">Debug Mode</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="status"></div>
+        <div id="status" class="hidden mt-5 p-2.5 rounded"></div>
+
+        <div class="debug-panel hidden mt-5 border border-gray-200 rounded-lg bg-[#1e1e1e] text-[#d4d4d4] font-mono">
+            <div class="flex justify-between items-center p-2.5 bg-[#2d2d2d] border-b border-gray-200 rounded-t-lg">
+                <h3 class="m-0 text-white text-base">Python Output</h3>
+                <button id="clearDebug" class="px-2 py-1 bg-[#444] text-white border-none rounded cursor-pointer text-sm hover:bg-[#555]">Clear</button>
+            </div>
+            <pre id="debugOutput" class="m-0 p-4 max-h-[300px] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed"></pre>
+        </div>
     </div>
 
     <script>
         const selectFileButton = document.getElementById('selectFile');
+        const selectOutputDirButton = document.getElementById('selectOutputDir');
         const processButton = document.getElementById('processButton');
         const filePathInput = document.getElementById('filePath');
+        const outputDirInput = document.getElementById('outputDir');
+        const outputFilenameInput = document.getElementById('outputFilename');
         const statusDiv = document.getElementById('status');
+        const cancelButton = document.getElementById('cancelButton');
+        let currentProcess = null;
 
         function showStatus(message, type) {
             statusDiv.innerHTML = message.replace(/\n/g, '<br>');
-            statusDiv.style.display = 'block';
-            statusDiv.className = type;
+            statusDiv.classList.remove('hidden');
+            statusDiv.className = `mt-5 p-2.5 rounded ${type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                                                      type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                                                      'bg-yellow-100 text-yellow-800 border border-yellow-200'}`;
         }
 
         selectFileButton.addEventListener('click', async () => {
             const filePath = await window.electronAPI.selectFile();
             if (filePath) {
                 filePathInput.value = filePath;
+                // Set default output directory to same as input file
+                const defaultOutputDir = filePath.substring(0, filePath.lastIndexOf('/'));
+                outputDirInput.value = defaultOutputDir;
                 processButton.disabled = false;
+            }
+        });
+
+        selectOutputDirButton.addEventListener('click', async () => {
+            const dirPath = await window.electronAPI.selectDirectory();
+            if (dirPath) {
+                outputDirInput.value = dirPath;
             }
         });
 
@@ -337,19 +310,71 @@
             debug: document.getElementById('debug')
         };
 
+        const debugPanel = document.querySelector('.debug-panel');
+        const debugOutput = document.getElementById('debugOutput');
+        const clearDebugButton = document.getElementById('clearDebug');
+
+        // Function to append text to debug output
+        function appendDebugOutput(text, type = 'info') {
+            const line = document.createElement('div');
+            line.className = type;
+            line.textContent = text;
+            debugOutput.appendChild(line);
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        }
+
+        // Function to clear debug output
+        function clearDebugOutput() {
+            debugOutput.innerHTML = '';
+        }
+
+        // Show debug panel when debug mode is enabled
+        settings.debug.addEventListener('change', (e) => {
+            debugPanel.classList.toggle('hidden', !e.target.checked);
+        });
+
+        // Clear debug output when button is clicked
+        clearDebugButton.addEventListener('click', clearDebugOutput);
+
         processButton.addEventListener('click', async () => {
             const videoPath = filePathInput.value;
-            if (!videoPath) return;
+            const outputDir = outputDirInput.value;
+            const outputFilename = outputFilenameInput.value.trim();
+            
+            if (!videoPath || !outputDir) return;
 
+            // Show cancel button and hide process button
+            processButton.classList.add('hidden');
+            cancelButton.classList.remove('hidden');
+            
+            // Disable all inputs
             processButton.disabled = true;
             selectFileButton.disabled = true;
+            selectOutputDirButton.disabled = true;
+            outputFilenameInput.disabled = true;
+            
             showStatus('Processing video...', 'processing');
+            clearDebugOutput();
+            appendDebugOutput('Starting video processing...', 'info');
 
             try {
                 // Convert object classes string to array of numbers
                 const objectClassesArray = settings.objectClasses.value.split(',').map(x => parseInt(x.trim()));
 
-                const result = await window.electronAPI.runPythonScript(videoPath, {
+                // Show debug panel if debug mode is enabled
+                if (settings.debug.checked) {
+                    debugPanel.classList.remove('hidden');
+                }
+
+                // Set up listener for Python output
+                const pythonOutputHandler = (event, message) => {
+                    appendDebugOutput(message, 'info');
+                };
+                window.electronAPI.onPythonOutput(pythonOutputHandler);
+
+                currentProcess = await window.electronAPI.runPythonScript(videoPath, {
+                    output_dir: outputDir,
+                    output_filename: outputFilename,
                     target_ratio: parseFloat(settings.targetRatio.value),
                     max_workers: parseInt(settings.maxWorkers.value),
                     detector: settings.detector.value,
@@ -374,21 +399,130 @@
                     debug: settings.debug.checked
                 });
 
-                if (result.success) {
-                    showStatus(`Video processing completed successfully!\nOutput saved to: ${result.outputPath}`, 'success');
+                // Remove the listener when done
+                window.electronAPI.removePythonOutputListener(pythonOutputHandler);
+
+                if (currentProcess.success) {
+                    showStatus(`Video processing completed successfully!\nOutput saved to: ${currentProcess.outputPath}`, 'success');
+                    appendDebugOutput('Processing completed successfully!', 'success');
+                    appendDebugOutput(`Output saved to: ${currentProcess.outputPath}`, 'success');
                 } else {
-                    showStatus(`Error: ${result.error}`, 'error');
+                    showStatus(`Error: ${currentProcess.error}`, 'error');
+                    appendDebugOutput(`Error: ${currentProcess.error}`, 'error');
+                    if (currentProcess.stack) {
+                        appendDebugOutput(currentProcess.stack, 'error');
+                    }
                 }
             } catch (error) {
-                const errorMessage = error.error || error.message || 'An unknown error occurred';
-                const errorDetails = error.stack ? `\n\nDetails: ${error.stack}` : '';
-                showStatus(`Error: ${errorMessage}${errorDetails}`, 'error');
-                
-                console.error('Processing error:', error);
+                if (error.code === 'PROCESS_CANCELLED') {
+                    showStatus('Processing cancelled', 'error');
+                    appendDebugOutput('Processing cancelled by user', 'error');
+                } else {
+                    const errorMessage = error.error || error.message || 'An unknown error occurred';
+                    const errorDetails = error.stack ? `\n\nDetails: ${error.stack}` : '';
+                    showStatus(`Error: ${errorMessage}${errorDetails}`, 'error');
+                    appendDebugOutput(`Error: ${errorMessage}`, 'error');
+                    if (error.stack) {
+                        appendDebugOutput(error.stack, 'error');
+                    }
+                    
+                    console.error('Processing error:', error);
+                }
             } finally {
+                // Reset UI state
+                processButton.classList.remove('hidden');
+                cancelButton.classList.add('hidden');
                 processButton.disabled = false;
                 selectFileButton.disabled = false;
+                selectOutputDirButton.disabled = false;
+                outputFilenameInput.disabled = false;
+                currentProcess = null;
             }
+        });
+
+        cancelButton.addEventListener('click', async () => {
+            appendDebugOutput('Cancelling processing...', 'info');
+            try {
+                const result = await window.electronAPI.cancelProcessing();
+                if (result.success) {
+                    showStatus('Processing cancelled', 'error');
+                    appendDebugOutput('Processing cancelled successfully', 'info');
+                } else {
+                    showStatus(`Failed to cancel: ${result.error}`, 'error');
+                    appendDebugOutput(`Failed to cancel: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error cancelling: ${error.message}`, 'error');
+                appendDebugOutput(`Error cancelling: ${error.message}`, 'error');
+            }
+        });
+
+        // Add accordion functionality
+        const accordionHeaders = document.querySelectorAll('.accordion-header');
+        const toggleAllButton = document.getElementById('toggleAllSettings');
+        let isAllExpanded = false;
+
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('svg');
+            const isExpanded = !content.classList.contains('hidden');
+            
+            content.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        function toggleAllSections(expand) {
+            accordionHeaders.forEach(header => {
+                const content = header.nextElementSibling;
+                const icon = header.querySelector('svg');
+                
+                if (expand) {
+                    content.classList.remove('hidden');
+                    icon.classList.add('rotate-180');
+                } else {
+                    content.classList.add('hidden');
+                    icon.classList.remove('rotate-180');
+                }
+            });
+            
+            isAllExpanded = expand;
+            toggleAllButton.textContent = expand ? 'Collapse All' : 'Expand All';
+        }
+
+        accordionHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                toggleAccordion(header);
+            });
+        });
+
+        toggleAllButton.addEventListener('click', () => {
+            toggleAllSections(!isAllExpanded);
+        });
+
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const calculateRatioButton = document.getElementById('calculateRatio');
+
+        calculateRatioButton.addEventListener('click', () => {
+            const width = parseFloat(widthInput.value);
+            const height = parseFloat(heightInput.value);
+            
+            if (width && height && width > 0 && height > 0) {
+                const ratio = width / height;
+                settings.targetRatio.value = ratio.toFixed(4);
+                appendDebugOutput(`Calculated aspect ratio: ${ratio.toFixed(4)} (${width}:${height})`, 'info');
+            } else {
+                showStatus('Please enter valid width and height values', 'error');
+            }
+        });
+
+        // Also calculate on Enter key in either input
+        [widthInput, heightInput].forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    calculateRatioButton.click();
+                }
+            });
         });
     </script>
 </body>
